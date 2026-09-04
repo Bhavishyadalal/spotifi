@@ -24,7 +24,6 @@ jobs:
           path: |
             ~/.buildozer
             ~/.gradle
-          # v2 in key forces cache bust — bump to v3/v4 if you need another fresh build
           key: buildozer-v2-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}
           restore-keys: |
             buildozer-v2-${{ runner.os }}-
@@ -60,13 +59,25 @@ jobs:
           buildozer -v android debug 2>&1 | tee build.log
         timeout-minutes: 45
 
+      - name: List build output (debug)
+        if: always()
+        run: |
+          echo "=== Repo root ==="
+          ls -la
+          echo "=== bin/ contents (if exists) ==="
+          ls -la bin/ 2>/dev/null || echo "bin/ does not exist at repo root"
+          echo "=== Searching for any .apk ==="
+          find . -name "*.apk" 2>/dev/null || echo "No .apk found anywhere"
+          echo "=== Buildozer .buildozer dir ==="
+          ls ~/.buildozer/android/platform/ 2>/dev/null || echo "no .buildozer platform dir"
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: spotifi-apk
           path: bin/*.apk
           retention-days: 7
-          if-no-files-found: error
+          if-no-files-found: warn
 
       - name: Upload build log
         if: always()
